@@ -7,8 +7,7 @@ repository = "https://github.com/chineseluo/behave_to_cucumber"
 
 keywords = ["behave", "cucumber", "covert", "BEHAVE", "CUCUMBER"]
 [tool.poetry.dependencies]
-python = "^3.8"
-loguru = "^0.6.0"
+python = "^3.7"
 
 [tool.poetry.dev-dependencies]
 btc = "behave_to_cucumber.__main__:main"
