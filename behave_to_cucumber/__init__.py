@@ -24,46 +24,36 @@ def convert(json_file, remove_background=False, duration_format=False, deduplica
 
     def format_level(tree, index=0, id_counter=0):
         for item in tree:
-            # Location in behave json translates to uri and line in cucumber json
-            # behave-json中的位置转换为uri和cumber-json中的行
-            # 拆分behave中elements中的location字段，拆分为功能文件uri，和element所在line
+            # behave-json中的位置转换为uri和cumber-json中的行，拆分behave中elements中的location字段，拆分为功能文件uri，和element所在line
             uri, line_number = item.pop("location").split(":")
             item["line"] = int(line_number)
             for field in fields_not_exist_in_cucumber_json:
                 if field in item:
                     item.pop(field)
             if 'tags' in item:
-                # Tags in behave are just a list of tag names, in cucumber every tag has a name and a line number.
-                # behave中的标记只是一个标记名列表，cucumber中的每个标记都有一个名称和行号。
-                # 给没有@标记的tag，加上tag
+                # behave中的标记只是一个标记名列表，cucumber中的每个标记都有一个名称和行号。给没有@标记的tag，加上tag
                 item['tags'] = [{"name": tag if tag.startswith('@') else '@' + tag, "line": item["line"] - 1} for tag in
                                 item['tags']]
             if json_nodes[index] == 'steps':
                 if 'result' in item:
-                    # Because several problems with long error messages the message sub-stringed to maximum 2000 chars.
                     # 由于长错误消息的几个问题，消息子串最多为2000个字符。
                     # TODO 需要对该bug进行修复，将",转换为"，/n/t
                     if 'error_message' in item["result"]:
                         error_msg = item["result"].pop('error_message')
                         logger.info(f'错误error_msg信息输出:{error_msg}')
-                        logger.info(type(error_msg))
                         for i in range(0, len(error_msg)):
                             if i == len(error_msg) - 1:
                                 error_msg[i] = error_msg[i] + "\n"
                             else:
                                 error_msg[i] = error_msg[i] + "\n\t"
-                        logger.info(f'error_msg:{error_msg}')
                         # item["result"]["error_message"] = str((str(error_msg).replace("\"", "").replace("\\'", ""))[:2000]).split("[")[1].split("]")[0]
                         item["result"]["error_message"] = str((str(error_msg))[:len(error_msg)]).split("[")[1].split("]")[
                             0].replace("',", "").replace("'","")
                         print(item["result"]["error_message"])
                         logger.info(f'错误信息输出:{item["result"]["error_message"]}')
-                        logger.info(type(item["result"]["error_message"]))
                     if 'duration' in item["result"] and duration_format:
                         item["result"]["duration"] = int(item["result"]["duration"] * 1000000000)
                 else:
-                    # In behave, skipped tests doesn't have result object in their json, there-fore when we generating
-                    # Cucumber report for every skipped test we need to generated a new result with status skipped
                     # 在behave中，跳过的测试在其json中没有结果对象，因此，当我们为每个跳过的测试生成Cucumber报告时，我们需要生成一个状态为skipped的新结果
                     item["result"] = {"status": "skipped", "duration": 0}
                 if 'table' in item:
@@ -86,8 +76,6 @@ def convert(json_file, remove_background=False, duration_format=False, deduplica
                 item[json_nodes[index + 1]] = format_level(
                     item[json_nodes[index + 1]], index + 1, id_counter=id_counter
                 )
-        logger.info(f"tree:{type(tree)}")
-        logger.info(f"tree_data:{tree}")
         return tree
 
     # Option to remove background element because behave pushes it steps to all scenarios already
