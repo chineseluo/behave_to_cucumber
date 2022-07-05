@@ -1,0 +1,2 @@
+# behaveToCucumber
+由于原作者对于behave2cucumber没有进行维护了，重写一个转换的公共库，用于将behave框架生成的behave.json转换为cucumber.json
