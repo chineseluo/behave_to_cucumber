@@ -39,7 +39,6 @@ def convert(json_file, remove_background=False, duration_format=False, deduplica
             if json_nodes[index] == 'steps':
                 if 'result' in item:
                     # 由于长错误消息的几个问题，消息子串最多为2000个字符。
-                    # TODO 需要对该bug进行修复，将",转换为"，/n/t
                     if 'error_message' in item["result"]:
                         error_msg = item["result"].pop('error_message')
                         for i in range(0, len(error_msg)):
@@ -76,7 +75,6 @@ def convert(json_file, remove_background=False, duration_format=False, deduplica
                 )
         return tree
 
-    # Option to remove background element because behave pushes it steps to all scenarios already
     # 删除背景元素的选项，因为behave将其推到所有场景中
     if remove_background:
         for feature in json_file:
