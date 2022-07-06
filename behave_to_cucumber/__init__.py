@@ -1,3 +1,5 @@
+#!/user/bin/env python
+# -*- coding: utf-8 -*-
 '''
 Copyright (c) 2016 Behalf Inc.
 
@@ -40,17 +42,15 @@ def convert(json_file, remove_background=False, duration_format=False, deduplica
                     # TODO 需要对该bug进行修复，将",转换为"，/n/t
                     if 'error_message' in item["result"]:
                         error_msg = item["result"].pop('error_message')
-                        logger.info(f'错误error_msg信息输出:{error_msg}')
                         for i in range(0, len(error_msg)):
                             if i == len(error_msg) - 1:
-                                error_msg[i] = error_msg[i] + "\n"
+                                error_msg[i] = error_msg[i] + '\n'
                             else:
-                                error_msg[i] = error_msg[i] + "\n\t"
-                        # item["result"]["error_message"] = str((str(error_msg).replace("\"", "").replace("\\'", ""))[:2000]).split("[")[1].split("]")[0]
-                        item["result"]["error_message"] = str((str(error_msg))[:len(error_msg)]).split("[")[1].split("]")[
-                            0].replace("',", "").replace("'","")
-                        print(item["result"]["error_message"])
-                        logger.info(f'错误信息输出:{item["result"]["error_message"]}')
+                                error_msg[i] = error_msg[i] + '\n\t'
+                        error_msg_info = str((str(error_msg).replace("\"", "").replace("\\'", "").replace("\'",
+                                                                                                          "").replace(
+                            "\\n", "\n").replace("\\t,", "\t"))[:5000])
+                        item["result"]["error_message"] = error_msg_info
                     if 'duration' in item["result"] and duration_format:
                         item["result"]["duration"] = int(item["result"]["duration"] * 1000000000)
                 else:
@@ -64,14 +64,12 @@ def convert(json_file, remove_background=False, duration_format=False, deduplica
                         t_line += 1
                         item['rows'].append({"cells": table_row, "line": item["line"] + t_line})
             else:
-                # uri is the name of the feature file the current item located
                 # uri是当前项所在的功能文件的名称
                 item["uri"] = uri
                 item["description"] = ""
                 item["id"] = id_counter
                 id_counter += 1
-            # If the scope is not "steps" proceed with the recursion
-            # 如果范围不是“步骤”，则继续递归
+            # 如果范围不是“steps”，则继续递归
             if index != 2 and json_nodes[index + 1] in item:
                 item[json_nodes[index + 1]] = format_level(
                     item[json_nodes[index + 1]], index + 1, id_counter=id_counter
