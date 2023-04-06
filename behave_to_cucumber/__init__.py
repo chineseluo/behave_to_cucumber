@@ -25,54 +25,60 @@ def convert(json_file, remove_background=False, duration_format=False, deduplica
     fields_not_exist_in_cucumber_json = ['status', 'step_type']
 
     def format_level(tree, index=0, id_counter=0):
-        for item in tree:
+        for item in tree[:]:
             # behave-json中的位置转换为uri和cumber-json中的行，拆分behave中elements中的location字段，拆分为功能文件uri，和element所在line
             uri, line_number = item.pop("location").split(":")
             item["line"] = int(line_number)
-            for field in fields_not_exist_in_cucumber_json:
-                if field in item:
-                    item.pop(field)
-            if 'tags' in item:
-                # behave中的标记只是一个标记名列表，cucumber中的每个标记都有一个名称和行号。给没有@标记的tag，加上tag
-                item['tags'] = [{"name": tag if tag.startswith('@') else '@' + tag, "line": item["line"] - 1} for tag in
-                                item['tags']]
-            if json_nodes[index] == 'steps':
-                if 'result' in item:
-                    # 由于长错误消息的几个问题，消息子串最多为2000个字符。
-                    if 'error_message' in item["result"]:
-                        error_msg = item["result"].pop('error_message')
-                        for i in range(0, len(error_msg)):
-                            if i == len(error_msg) - 1:
-                                error_msg[i] = error_msg[i] + '\n'
-                            else:
-                                error_msg[i] = error_msg[i] + '\n\t'
-                        error_msg_info = str((str(error_msg).replace("\"", "").replace("\\'", "").replace("\'",
-                                                                                                          "").replace(
-                            "\\n", "\n").replace("\\t,", "\t"))[:5000])
-                        item["result"]["error_message"] = error_msg_info
-                    if 'duration' in item["result"] and duration_format:
-                        item["result"]["duration"] = int(item["result"]["duration"] * 1000000000)
-                else:
-                    # 在behave中，跳过的测试在其json中没有结果对象，因此，当我们为每个跳过的测试生成Cucumber报告时，我们需要生成一个状态为skipped的新结果
-                    item["result"] = {"status": "skipped", "duration": 0}
-                if 'table' in item:
-                    item['rows'] = []
-                    t_line = 1
-                    item['rows'].append({"cells": item['table']['headings'], "line": item["line"] + t_line})
-                    for table_row in item['table']['rows']:
-                        t_line += 1
-                        item['rows'].append({"cells": table_row, "line": item["line"] + t_line})
+            if item['keyword'] == "Feature" and item["status"] == "skipped":
+                tree.remove(item)
             else:
-                # uri是当前项所在的功能文件的名称
-                item["uri"] = uri
-                item["description"] = ""
-                item["id"] = id_counter
-                id_counter += 1
-            # 如果范围不是“steps”，则继续递归
-            if index != 2 and json_nodes[index + 1] in item:
-                item[json_nodes[index + 1]] = format_level(
-                    item[json_nodes[index + 1]], index + 1, id_counter=id_counter
-                )
+                if item['keyword'] in ['Scenario Outline',"Scenario"] and item["status"] == "skipped":
+                    tree.remove(item)
+                else:
+                    for field in fields_not_exist_in_cucumber_json:
+                        if field in item:
+                            item.pop(field)
+                    if 'tags' in item:
+                        # behave中的标记只是一个标记名列表，cucumber中的每个标记都有一个名称和行号。给没有@标记的tag，加上tag
+                        item['tags'] = [{"name": tag if tag.startswith('@') else '@' + tag, "line": item["line"] - 1} for tag in
+                                        item['tags']]
+                    if json_nodes[index] == 'steps':
+                        if 'result' in item:
+                            # 由于长错误消息的几个问题，消息子串最多为2000个字符。
+                            if 'error_message' in item["result"]:
+                                error_msg = item["result"].pop('error_message')
+                                for i in range(0, len(error_msg)):
+                                    if i == len(error_msg) - 1:
+                                        error_msg[i] = error_msg[i] + '\n'
+                                    else:
+                                        error_msg[i] = error_msg[i] + '\n\t'
+                                error_msg_info = str((str(error_msg).replace("\"", "").replace("\\'", "").replace("\'",
+                                                                                                                  "").replace(
+                                    "\\n", "\n").replace("\\t,", "\t"))[:5000])
+                                item["result"]["error_message"] = error_msg_info
+                            if 'duration' in item["result"] and duration_format:
+                                item["result"]["duration"] = int(item["result"]["duration"] * 1000000000)
+                        else:
+                            # 在behave中，跳过的测试在其json中没有结果对象，因此，当我们为每个跳过的测试生成Cucumber报告时，我们需要生成一个状态为skipped的新结果
+                            item["result"] = {"status": "skipped", "duration": 0}
+                        if 'table' in item:
+                            item['rows'] = []
+                            t_line = 1
+                            item['rows'].append({"cells": item['table']['headings'], "line": item["line"] + t_line})
+                            for table_row in item['table']['rows']:
+                                t_line += 1
+                                item['rows'].append({"cells": table_row, "line": item["line"] + t_line})
+                    else:
+                        # uri是当前项所在的功能文件的名称
+                        item["uri"] = uri
+                        item["description"] = ""
+                        item["id"] = id_counter
+                        id_counter += 1
+                    # 如果范围不是“steps”，则继续递归
+                    if index != 2 and json_nodes[index + 1] in item:
+                        item[json_nodes[index + 1]] = format_level(
+                            item[json_nodes[index + 1]], index + 1, id_counter=id_counter
+                        )
         return tree
 
     # 删除背景元素的选项，因为behave将其推到所有场景中
@@ -80,7 +86,6 @@ def convert(json_file, remove_background=False, duration_format=False, deduplica
         for feature in json_file:
             if feature['elements'][0]['type'] == 'background':
                 feature['elements'].pop(0)
-
     if deduplicate:
         def check_dupe(current_feature, current_scenario, previous_scenario):
             if "autoretry" not in current_feature['tags'] and "autoretry" not in current_scenario['tags']:

@@ -14,7 +14,7 @@ AUTORETRY_DEDUPE_JSON = os.path.dirname(os.path.realpath(__file__)) + "/fixtures
 
 class TestB2C(unittest.TestCase):
     def test_convert(self):
-        with open("/Users/luozhongwen/persion_script/behave_to_cucumber/test/fixtures/test_behave.json") as f:
+        with open("/Users/luozhongwen/persion_script/behave_to_cucumber/test/fixtures/behave.json") as f:
             converted = behave_to_cucumber.convert(json.load(f))
             # logger.info(converted)
         with open("/Users/luozhongwen/persion_script/behave_to_cucumber/test/fixtures/test.json", 'w') as f:

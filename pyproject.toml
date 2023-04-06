@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "behave_to_cucumber"
-version = "0.1.8"
+version = "0.1.9"
 description = "该项目主要用于将behave框架生成的behave.json转换为cucumber.json"
 authors = ["chineseluo <848257135@qq.com>"]
 repository = "https://github.com/chineseluo/behave_to_cucumber"
